@@ -88,3 +88,17 @@ build/
 .context/
 PLAN.md
 TASK.md
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix
+
+### VisualStudioCode Patch ###
+# Ignore all local history of files
+.history
+.ionide
+*.csv
+route_analysis/*.csv
+route_analysis/*.csv.gz
