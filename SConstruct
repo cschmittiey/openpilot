@@ -107,8 +107,13 @@ if arch == "larch64":
   env.Append(CCFLAGS=arch_flags)
   env.Append(CXXFLAGS=arch_flags)
 elif arch == "Darwin":
+  brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
   env.Append(LIBPATH=[
     "/System/Library/Frameworks/OpenGL.framework/Libraries",
+    f"{brew_prefix}/opt/openssl@3/lib",
+  ])
+  env.Append(CPPPATH=[
+    f"{brew_prefix}/opt/openssl@3/include",
   ])
   env.Append(CCFLAGS=["-DGL_SILENCE_DEPRECATION"])
   env.Append(CXXFLAGS=["-DGL_SILENCE_DEPRECATION"])
