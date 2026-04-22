@@ -85,7 +85,7 @@ def parse_route_with_time(route_str):
 
     return route_path, (start_sec, end_sec)
   except ValueError as e:
-    raise ValueError(f"Invalid time range '{time_spec}': {e}")
+    raise ValueError(f"Invalid time range '{time_spec}': {e}") from e
 
 def get_msg_name(addr, dbc=None):
   """Get message name from DBC if available."""
@@ -321,7 +321,7 @@ def describe_changed_bits(changed_value, num_bytes, addr=None, dbc=None):
             descriptions.append(f"  - Byte {byte_idx} nibble LO")
         else:
           # LO nibble: bits 0-3 (LSB-first numbering)
-          for bit_pos in range(0, 4):
+          for bit_pos in range(4):
             if byte_val & (1 << bit_pos):
               bit_mask = 1 << bit_pos
               sig_name, is_full = find_signal_for_bits(byte_idx, bit_mask, num_bytes, signal_matches)

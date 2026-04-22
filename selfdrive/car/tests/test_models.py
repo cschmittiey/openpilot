@@ -424,7 +424,10 @@ class TestCarModelBase(unittest.TestCase):
         checkResult = (v_ego_raw > (self.safety.get_vehicle_speed_max() + 1e-3) or
                               v_ego_raw < (self.safety.get_vehicle_speed_min() - 1e-3))
         if checkResult and checks['vEgoRaw'] % 100 == 0:
-            print(f"[SAMPLE {checks['vEgoRaw']}] v_ego_raw: {v_ego_raw}, safety.get_vehicle_speed_max(): {self.safety.get_vehicle_speed_max()}, safety.get_vehicle_speed_min(): {self.safety.get_vehicle_speed_min()}, checkResult: {checkResult}")
+            print(f"[SAMPLE {checks['vEgoRaw']}] v_ego_raw: {v_ego_raw}, " +
+                  f"safety.get_vehicle_speed_max(): {self.safety.get_vehicle_speed_max()}, " +
+                  f"safety.get_vehicle_speed_min(): {self.safety.get_vehicle_speed_min()}, " +
+                  f"checkResult: {checkResult}")
         checks['vEgoRaw'] += checkResult
 
       # TODO: remove this exception once this mismatch is resolved

@@ -17,7 +17,6 @@ Example:
 
 import argparse
 import pandas as pd
-from collections import defaultdict
 import re
 
 # Add openpilot to path
@@ -26,7 +25,7 @@ from pathlib import Path
 OPENPILOT_PATH = Path(__file__).parent.parent
 sys.path.insert(0, str(OPENPILOT_PATH))
 
-from tools.lib.logreader import LogReader
+from openpilot.tools.lib.logreader import LogReader
 from opendbc.car.volvo.carstate import CarState
 from opendbc.car.volvo.values import CAR
 from opendbc.car import structs, Bus
@@ -281,7 +280,7 @@ def main():
   print(f"Pilot Assist engaged samples: {df['pilot_assist_engaged'].sum()} ({100*df['pilot_assist_engaged'].mean():.1f}%)")
   print(f"Speed range: {df['vEgoRaw_ms'].min():.1f} - {df['vEgoRaw_ms'].max():.1f} m/s")
   print(f"Steering angle range: {df['steeringAngleDeg'].min():.1f} - {df['steeringAngleDeg'].max():.1f} deg")
-  print(f"\nFirst few rows:")
+  print("\nFirst few rows:")
   print(df.head())
   print(f"\nCSV saved to: {args.output}")
 
