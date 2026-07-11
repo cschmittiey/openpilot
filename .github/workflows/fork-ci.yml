@@ -1,0 +1,24 @@
+name: fork-ci
+
+# Fork-specific CI: upstream's tests.yaml triggers on push to master, but this
+# fork lives on main, so those jobs never fire here. Safety-code CI runs in the
+# opendbc fork; here we sanity-check the things only this repo can break.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: fork-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  submodule_pins:
+    name: Submodule pins fetchable
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/check_submodule_pins.py
