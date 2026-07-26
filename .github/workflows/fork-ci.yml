@@ -71,7 +71,10 @@ jobs:
         run: python3 openpilot/system/manager/build.py
       - name: Manager smoke tests
         timeout-minutes: 10
-        run: pytest openpilot/system/manager -q
+        run: |
+          # manager tests import the UI processes; raylib needs a display
+          source openpilot/selfdrive/test/setup_xvfb.sh
+          pytest openpilot/system/manager -q
 
   fresh_install:
     name: Fresh install (anonymous clone + LFS)
