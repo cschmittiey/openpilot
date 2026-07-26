@@ -10,7 +10,7 @@ name: fork-ci
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'claude/**']
   pull_request:
   workflow_dispatch:
 
