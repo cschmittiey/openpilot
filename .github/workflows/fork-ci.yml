@@ -2,21 +2,43 @@ name: fork-ci
 
 # Fork-specific CI: upstream's tests.yaml triggers on push to master, but this
 # fork lives on main, so those jobs never fire here. Safety-code CI runs in the
-# opendbc fork; here we sanity-check the things only this repo can break.
+# opendbc fork; here we sanity-check the things only this repo can break —
+# specifically everything a device needs to install, build, and boot this tree:
 #
-# The compile job exists because devices build this tree with scons on boot:
-# an unbuildable tip bricks every device that updates to it (they boot to the
-# "openpilot failed to build" screen). Nothing else compiles this fork's main.
+#   submodule_pins - every gitlink fetchable, every .gitmodules branch exists
+#                    (the opendbc pin once tracked a deleted branch, silently
+#                    breaking installs and the device updater for months)
+#   compile        - devices build this tree with scons at boot via
+#                    system/manager/build.py: an unbuildable tip bricks every
+#                    device that updates to it (boot loops into the "openpilot
+#                    failed to build" screen). Runs the exact device build
+#                    entrypoint, then manager smoke tests.
+#   fresh_install  - clones the repo the way the device installer does: no
+#                    credentials, submodules recursive, LFS objects pulled
+#                    anonymously. Catches private submodules and missing LFS
+#                    objects that only break outside authenticated CI.
+#   agnos_urls     - fresh installs flash the OS images pinned in agnos.json;
+#                    those URLs can rot with no push to this repo.
+#
+# The schedule exists because pins, LFS objects, and AGNOS URLs all rot
+# without anyone pushing — the failures land on devices first unless CI
+# re-checks them.
 
 on:
   push:
     branches: [main, 'claude/**']
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: '23 11 * * *'
 
 concurrency:
-  group: fork-ci-${{ github.ref }}
+  group: fork-ci-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
+
+env:
+  CI: 1
+  PYTHONPATH: ${{ github.workspace }}
 
 jobs:
   submodule_pins:
@@ -27,18 +49,52 @@ jobs:
       - uses: actions/checkout@v4
       - run: python3 scripts/check_submodule_pins.py
 
+  agnos_urls:
+    name: AGNOS image URLs reachable
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/check_agnos_urls.py
+
   compile:
-    name: openpilot compiles
+    name: device build
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    env:
-      CI: 1
-      PYTHONPATH: ${{ github.workspace }}
     steps:
       - uses: actions/checkout@v7
         with:
           submodules: true
       - run: ./tools/op.sh setup
-      - name: Build openpilot
+      - name: Build openpilot (device build path)
         timeout-minutes: 45
-        run: scons
+        run: python3 openpilot/system/manager/build.py
+      - name: Manager smoke tests
+        timeout-minutes: 10
+        run: pytest openpilot/system/manager -q
+
+  fresh_install:
+    name: Fresh install (anonymous clone + LFS)
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Clone like the device installer (no credentials)
+        run: |
+          git clone --quiet --recurse-submodules -j4 --branch "${{ github.ref_name }}" \
+            "https://github.com/${{ github.repository }}.git" op
+          cd op
+          git checkout --quiet "${{ github.sha }}"
+          git submodule update --init --recursive --quiet
+      - name: LFS objects fully fetched
+        working-directory: op
+        run: |
+          git lfs pull
+          git lfs ls-files | awk '$2 == "-"' > /tmp/lfs_missing || true
+          total=$(git lfs ls-files | wc -l)
+          if [ -s /tmp/lfs_missing ]; then
+            echo "FAIL: $(wc -l < /tmp/lfs_missing) of $total LFS files are still pointers after anonymous git lfs pull:"
+            cat /tmp/lfs_missing
+            exit 1
+          fi
+          echo "OK: all $total LFS objects fetched anonymously"
