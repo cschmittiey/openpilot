@@ -3,6 +3,10 @@ name: fork-ci
 # Fork-specific CI: upstream's tests.yaml triggers on push to master, but this
 # fork lives on main, so those jobs never fire here. Safety-code CI runs in the
 # opendbc fork; here we sanity-check the things only this repo can break.
+#
+# The compile job exists because devices build this tree with scons on boot:
+# an unbuildable tip bricks every device that updates to it (they boot to the
+# "openpilot failed to build" screen). Nothing else compiles this fork's main.
 
 on:
   push:
@@ -22,3 +26,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 scripts/check_submodule_pins.py
+
+  compile:
+    name: openpilot compiles
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      CI: 1
+      PYTHONPATH: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - run: ./tools/op.sh setup
+      - name: Build openpilot
+        timeout-minutes: 45
+        run: scons
