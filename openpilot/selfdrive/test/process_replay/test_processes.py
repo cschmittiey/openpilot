@@ -64,7 +64,10 @@ segments = [
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
-excluded_interfaces = ["mock", "body", "psa"]
+# volvo is fork-local and has no process-replay route yet; it is already listed
+# in opendbc's non_tested_cars for the same reason. Drop it from this list once
+# a Polestar 2 route is added to the segment list above.
+excluded_interfaces = ["mock", "body", "psa", "volvo"]
 
 BASE_URL = "https://raw.githubusercontent.com/commaai/ci-artifacts/refs/heads/process-replay/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
