@@ -71,10 +71,16 @@ jobs:
         run: python3 openpilot/system/manager/build.py
       - name: Manager smoke tests
         timeout-minutes: 10
+        env:
+          # manager tests import the UI processes, which import raylib. Upstream
+          # #38298 dropped setup_xvfb.sh for raylib's headless backend; that
+          # backend still links libGLESv2, which the stock ubuntu runner image
+          # lacks (upstream only ever runs these on their own runners).
+          RAYLIB_BACKEND: headless
         run: |
-          # manager tests import the UI processes; raylib needs a display
-          source openpilot/selfdrive/test/setup_xvfb.sh
-          pytest openpilot/system/manager -q
+          sudo apt-get update -qq && sudo apt-get install -y -qq libgles2
+          # upstream #38471 replaced pytest with tools/test_runner.py
+          tools/test_runner.py openpilot/system/manager
 
   fresh_install:
     name: Fresh install (anonymous clone + LFS)
