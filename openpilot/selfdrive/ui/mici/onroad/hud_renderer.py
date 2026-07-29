@@ -1,3 +1,4 @@
+import math
 import pyray as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
@@ -177,7 +178,26 @@ class HudRenderer(Widget):
     if self.is_cruise_set:
       self._draw_set_speed(rect)
 
+    if ui_state.usbgpu and ui_state.usbgpu_compiled:
+      self._draw_model_source(rect)
+
     self._draw_steering_wheel(rect)
+
+  def _draw_model_source(self, rect: rl.Rectangle) -> None:
+    if ui_state.sm.recv_frame['selfdriveState'] < ui_state.started_frame:
+      return
+    big_size = measure_text_cached(self._font_semi_bold, "BIG", FONT_SIZES.max_speed)
+    big_pos = rl.Vector2(rect.x + rect.width - 12 - big_size.x, rect.y + rect.height - 14 - FONT_SIZES.max_speed)
+
+    big_failed = not ui_state.usbgpu_loading and not ui_state.usbgpu_active and ui_state.sm.recv_frame['modelV2'] > ui_state.started_frame
+    if ui_state.usbgpu_loading:
+      pulse = 0.5 - 0.5 * math.cos(rl.get_time() * 6.0)
+      big_color = rl.Color(255, 255, 255, int(255 * (0.35 + 0.65 * pulse)))
+    elif big_failed:
+      big_color = rl.Color(255, 115, 0, 255)
+    else:
+      big_color = rl.WHITE
+    rl.draw_text_ex(self._font_semi_bold, "BIG", big_pos, FONT_SIZES.max_speed, 0, big_color)
 
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
     wheel_txt = self._txt_wheel_critical if self._show_wheel_critical else self._txt_wheel
