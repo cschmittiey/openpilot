@@ -101,6 +101,12 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
     - uses: actions/checkout@v7
+    # fork-local: this job falls back to a stock ubuntu runner off commaai/openpilot,
+    # and that image has no libGLESv2.so.2 — which raylib's headless backend (#38298)
+    # links. No-op on comma's own runners.
+    - name: Install headless raylib system deps
+      if: github.repository != 'commaai/openpilot'
+      run: sudo apt-get update -qq && sudo apt-get install -y -qq libgles2
     - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons
@@ -211,6 +217,10 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
       - uses: actions/checkout@v7
+      # fork-local: see the same step in the unit tests job above.
+      - name: Install headless raylib system deps
+        if: github.repository != 'commaai/openpilot'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libgles2
       - run: ./tools/op.sh setup
       - name: Build openpilot
         run: scons
